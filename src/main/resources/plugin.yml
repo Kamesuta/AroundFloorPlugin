@@ -3,3 +3,16 @@ version: '1.0-SNAPSHOT'
 main: com.kamesuta.aroundfloor.AroundFloorPlugin
 api-version: '1.21'
 authors: [ Kamesuta ]
+description: プレイヤー周囲のブロック可視化プラグイン
+
+commands:
+  aroundfloor:
+    description: AroundFloorプラグインのメインコマンド
+    aliases: [af]
+    usage: /<command> [reload|stats|help]
+    permission: aroundfloor.admin
+
+permissions:
+  aroundfloor.admin:
+    description: AroundFloorプラグインの管理権限
+    default: op

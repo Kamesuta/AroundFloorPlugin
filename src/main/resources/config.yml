@@ -3,10 +3,10 @@ aroundfloor:
   visibility-range: 10
   # 対象Y座標範囲
   source-y-min: -50
-  source-y-max: 319
+  source-y-max: -10
   # 表示Y座標範囲
   display-y-min: 50
-  display-y-max: 419
+  display-y-max: 90
   # Y座標オフセット
   y-offset: 100
   # 更新間隔（tick）

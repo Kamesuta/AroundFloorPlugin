@@ -35,6 +35,12 @@ public class PlayerListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerMove(PlayerMoveEvent event) {
         Player player = event.getPlayer();
+        
+        // 権限チェック
+        if (!player.hasPermission("aroundfloor.use")) {
+            return;
+        }
+        
         Location from = event.getFrom();
         Location to = event.getTo();
         
@@ -82,6 +88,11 @@ public class PlayerListener implements Listener {
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
         
+        // 権限チェック
+        if (!player.hasPermission("aroundfloor.use")) {
+            return;
+        }
+        
         // 直接プレイヤー初期化を実行（既にメインスレッド）
         try {
             blockManager.onPlayerJoin(player);
@@ -127,8 +138,13 @@ public class PlayerListener implements Listener {
             @Override
             public void run() {
                 try {
-                    // オンラインの全プレイヤーをチェック（メインスレッドで実行）
+                    // オンラインの権限を持つプレイヤーをチェック（メインスレッドで実行）
                     for (Player player : plugin.getServer().getOnlinePlayers()) {
+                        // 権限チェック
+                        if (!player.hasPermission("aroundfloor.use")) {
+                            continue;
+                        }
+                        
                         try {
                             blockManager.updateVisibleBlocks(player);
                         } catch (Exception e) {

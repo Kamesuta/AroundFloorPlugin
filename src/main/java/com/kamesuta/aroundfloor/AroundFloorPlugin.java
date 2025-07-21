@@ -31,9 +31,11 @@ public final class AroundFloorPlugin extends JavaPlugin {
             getServer().getPluginManager().registerEvents(playerListener, this);
             getLogger().info("プレイヤーイベントリスナーを登録しました");
             
-            // 既にオンラインのプレイヤーを初期化
+            // 既にオンラインの権限を持つプレイヤーを初期化
             for (Player player : getServer().getOnlinePlayers()) {
-                blockManager.onPlayerJoin(player);
+                if (player.hasPermission("aroundfloor.use")) {
+                    blockManager.onPlayerJoin(player);
+                }
             }
             
             // 統計情報の定期出力タスクを開始（デバッグモード時のみ）

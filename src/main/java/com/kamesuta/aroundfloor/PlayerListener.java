@@ -45,35 +45,30 @@ public class PlayerListener implements Listener {
         boolean worldChanged = !from.getWorld().equals(to.getWorld());
         
         // 移動距離が小さい場合はスキップ（ワールド変更時は除く）
-        if (!worldChanged && from.distanceSquared(to) < 0.25) { // 0.5ブロック未満
-            return;
-        }
+//        if (!worldChanged && from.distanceSquared(to) < 0.25) { // 0.5ブロック未満
+//            return;
+//        }
         
         // レート制限チェック
         UUID playerId = player.getUniqueId();
         long currentTime = System.currentTimeMillis();
         Long lastUpdate = lastUpdateTime.get(playerId);
         
-        if (!worldChanged && lastUpdate != null && (currentTime - lastUpdate) < 500) { // 0.5秒未満は無視
-            return;
-        }
+//        if (!worldChanged && lastUpdate != null && (currentTime - lastUpdate) < 500) { // 0.5秒未満は無視
+//            return;
+//        }
         
         lastUpdateTime.put(playerId, currentTime);
         
-        // 非同期でブロック更新を実行（メインスレッドの負荷軽減）
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                try {
-                    blockManager.updateVisibleBlocks(player);
-                } catch (Exception e) {
-                    plugin.getLogger().warning("プレイヤー " + player.getName() + " のブロック更新中にエラーが発生しました: " + e.getMessage());
-                    if (config.isDebug()) {
-                        e.printStackTrace();
-                    }
-                }
+        // 直接ブロック更新を実行（既にメインスレッド）
+        try {
+            blockManager.updateVisibleBlocks(player);
+        } catch (Exception e) {
+            plugin.getLogger().warning("プレイヤー " + player.getName() + " のブロック更新中にエラーが発生しました: " + e.getMessage());
+            if (config.isDebug()) {
+                e.printStackTrace();
             }
-        }.runTaskAsynchronously(plugin);
+        }
         
         if (config.isDebug()) {
             plugin.getLogger().info(player.getName() + " が移動しました: " + 
@@ -87,29 +82,16 @@ public class PlayerListener implements Listener {
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
         
-        // メインスレッドでプレイヤー初期化
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                try {
-                    blockManager.onPlayerJoin(player);
-                    
-                    // 初期位置でブロック更新を実行
-                    new BukkitRunnable() {
-                        @Override
-                        public void run() {
-                            blockManager.updateVisibleBlocks(player);
-                        }
-                    }.runTaskAsynchronously(plugin);
-                    
-                } catch (Exception e) {
-                    plugin.getLogger().warning("プレイヤー " + player.getName() + " の参加処理中にエラーが発生しました: " + e.getMessage());
-                    if (config.isDebug()) {
-                        e.printStackTrace();
-                    }
-                }
+        // 直接プレイヤー初期化を実行（既にメインスレッド）
+        try {
+            blockManager.onPlayerJoin(player);
+            blockManager.updateVisibleBlocks(player);
+        } catch (Exception e) {
+            plugin.getLogger().warning("プレイヤー " + player.getName() + " の参加処理中にエラーが発生しました: " + e.getMessage());
+            if (config.isDebug()) {
+                e.printStackTrace();
             }
-        }.runTask(plugin);
+        }
         
         if (config.isDebug()) {
             plugin.getLogger().info(player.getName() + " がサーバーに参加しました");
@@ -121,21 +103,16 @@ public class PlayerListener implements Listener {
         Player player = event.getPlayer();
         UUID playerId = player.getUniqueId();
         
-        // 非同期でクリーンアップ
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                try {
-                    blockManager.onPlayerQuit(player);
-                    lastUpdateTime.remove(playerId);
-                } catch (Exception e) {
-                    plugin.getLogger().warning("プレイヤー " + player.getName() + " の退出処理中にエラーが発生しました: " + e.getMessage());
-                    if (config.isDebug()) {
-                        e.printStackTrace();
-                    }
-                }
+        // 直接クリーンアップを実行（既にメインスレッド）
+        try {
+            blockManager.onPlayerQuit(player);
+            lastUpdateTime.remove(playerId);
+        } catch (Exception e) {
+            plugin.getLogger().warning("プレイヤー " + player.getName() + " の退出処理中にエラーが発生しました: " + e.getMessage());
+            if (config.isDebug()) {
+                e.printStackTrace();
             }
-        }.runTaskAsynchronously(plugin);
+        }
         
         if (config.isDebug()) {
             plugin.getLogger().info(player.getName() + " がサーバーから退出しました");
@@ -150,15 +127,16 @@ public class PlayerListener implements Listener {
             @Override
             public void run() {
                 try {
-                    // オンラインの全プレイヤーをチェック
+                    // オンラインの全プレイヤーをチェック（メインスレッドで実行）
                     for (Player player : plugin.getServer().getOnlinePlayers()) {
-                        // 各プレイヤーの更新を非同期で実行
-                        new BukkitRunnable() {
-                            @Override
-                            public void run() {
-                                blockManager.updateVisibleBlocks(player);
+                        try {
+                            blockManager.updateVisibleBlocks(player);
+                        } catch (Exception e) {
+                            plugin.getLogger().warning("プレイヤー " + player.getName() + " の定期更新中にエラーが発生しました: " + e.getMessage());
+                            if (config.isDebug()) {
+                                e.printStackTrace();
                             }
-                        }.runTaskAsynchronously(plugin);
+                        }
                     }
                     
                     if (config.isDebug()) {
